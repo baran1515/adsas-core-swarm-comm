@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: make all
+      - name: Unit tests
+        run: make test
+      - name: Swarm demo (node loss)
+        run: |
+          DURATION=25 FAIL_AT=8 bash scripts/run_demo.sh | tee demo.txt
+          grep -q "NODE 4 DOWN" demo.txt
+          grep -q "CONSISTENT" demo.txt
+      - name: Python tools
+        run: |
+          python3 tools/packet_size.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: demo-logs
+          path: logs/
